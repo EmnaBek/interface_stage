@@ -18,8 +18,12 @@ import com.takakotlin.usb.OpenJpegBridge
 
 class MainActivity: FlutterActivity() {    companion object {
         init {
-            // load the JNI wrapper which in turn links libopenjp2 (must be placed in jniLibs or built via CMake)
-            System.loadLibrary("openjp2wrapper")
+            // Prefer the CMake-built bridge when available; fall back to prebuilt wrapper.
+            try {
+                System.loadLibrary("openjpeg_bridge")
+            } catch (_: UnsatisfiedLinkError) {
+                System.loadLibrary("openjp2wrapper")
+            }
         }
     }
     private val CHANNEL = "taka_usb"
