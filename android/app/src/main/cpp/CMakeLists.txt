@@ -5,12 +5,7 @@ project(openjpeg_bridge)
 set(OPENJPEG_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../openjpeg)
 set(OPENJPEG_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../jniLibs/include)
 set(OPENJPEG_PREBUILT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../jniLibs/${ANDROID_ABI})
-set(OPENJPEG_PREBUILT_LIB_OPENJP2 ${OPENJPEG_PREBUILT_DIR}/libopenjp2.so)
-set(OPENJPEG_PREBUILT_LIB_WRAPPER ${OPENJPEG_PREBUILT_DIR}/libopenjp2wrapper.so)
-set(HAS_OPENJPEG_HEADER FALSE)
-if(EXISTS ${OPENJPEG_INCLUDE_DIR}/openjpeg.h)
-    set(HAS_OPENJPEG_HEADER TRUE)
-endif()
+
 
 set(BRIDGE_SRC openjpeg_bridge_stub.cpp)
 set(OPENJPEG_ENABLED OFF)
@@ -32,21 +27,7 @@ if(EXISTS ${OPENJPEG_SRC_DIR}/CMakeLists.txt)
     set(BRIDGE_SRC openjpeg_bridge.cpp)
     set(OPENJPEG_ENABLED ON)
 
-# Option 2: Use prebuilt OpenJPEG shared lib + header
-elseif(HAS_OPENJPEG_HEADER AND (EXISTS ${OPENJPEG_PREBUILT_LIB_OPENJP2} OR EXISTS ${OPENJPEG_PREBUILT_LIB_WRAPPER}))
-    set(OPENJPEG_IMPORTED_LIB "")
-    if(EXISTS ${OPENJPEG_PREBUILT_LIB_OPENJP2})
-        set(OPENJPEG_IMPORTED_LIB ${OPENJPEG_PREBUILT_LIB_OPENJP2})
-    else()
-        # Some projects ship OpenJPEG symbols in libopenjp2wrapper.so
-        set(OPENJPEG_IMPORTED_LIB ${OPENJPEG_PREBUILT_LIB_WRAPPER})
-    endif()
 
-    message(STATUS "Using prebuilt OpenJPEG from ${OPENJPEG_IMPORTED_LIB}")
-
-    add_library(openjp2 SHARED IMPORTED)
-    set_target_properties(openjp2 PROPERTIES
-        IMPORTED_LOCATION ${OPENJPEG_IMPORTED_LIB}
     )
 
     set(BRIDGE_SRC openjpeg_bridge.cpp)
