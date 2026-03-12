@@ -14,11 +14,16 @@ import io.flutter.plugin.common.MethodChannel
 import kotlin.concurrent.thread
 import java.io.ByteArrayOutputStream
 import com.example.interface_stage.usb.*
+import com.takakotlin.usb.OpenJpegBridge
 
 class MainActivity: FlutterActivity() {    companion object {
         init {
-            // load the JNI wrapper which in turn links libopenjp2 (must be placed in jniLibs or built via CMake)
-            System.loadLibrary("openjp2wrapper")
+            // Prefer the CMake-built bridge when available; fall back to prebuilt wrapper.
+            try {
+                System.loadLibrary("openjpeg_bridge")
+            } catch (_: UnsatisfiedLinkError) {
+                System.loadLibrary("openjp2wrapper")
+            }
         }
     }
     private val CHANNEL = "taka_usb"
@@ -491,10 +496,6 @@ class MainActivity: FlutterActivity() {    companion object {
         return "Indisponible"
     }
 
-    // Attempt to decode JP2/J2K to PNG using multiple methods
-    // Native helper declared later; will load the C++ library at class load time.
-    private external fun nativeJp2ToArgb(jp2: ByteArray): ByteArray?
-
     private fun decodeJp2ToPng(jp2Bytes: ByteArray): ByteArray? {
         return try {
             Log.d(TAG, "decodeJp2ToPng: attempting to decode ${jp2Bytes.size} bytes")
@@ -532,19 +533,31 @@ class MainActivity: FlutterActivity() {    companion object {
 
             // Method 3: call native OpenJPEG decoder via JNI
             try {
-                val argb = nativeJp2ToArgb(jp2Bytes)
-                if (argb != null) {
-                    Log.d(TAG, "decodeJp2ToPng: native openjpeg returned ${argb.size} bytes")
-                    val buf = java.nio.ByteBuffer.wrap(argb)
-                    val width = buf.int
-                    val height = buf.int
-                    val pixels = IntArray(width * height)
-                    buf.asIntBuffer().get(pixels)
-                    val bmp = android.graphics.Bitmap.createBitmap(pixels, width, height, android.graphics.Bitmap.Config.ARGB_8888)
-                    val pngStream = java.io.ByteArrayOutputStream()
-                    bmp.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, pngStream)
-                    bmp.recycle()
-                    return pngStream.toByteArray()
+                val decoded = OpenJpegBridge.decode(jp2Bytes)
+                if (decoded.error != null) {
+                    Log.w(TAG, "decodeJp2ToPng: native openjpeg returned error=${decoded.error}")
+                } else if (decoded.width > 0 && decoded.height > 0 && decoded.rgba != null) {
+                    val rgba = decoded.rgba!!
+                    val width = decoded.width
+                    val height = decoded.height
+                    if (rgba.size >= width * height * 4) {
+                        Log.d(TAG, "decodeJp2ToPng: native openjpeg decoded ${width}x${height}")
+                        val pixels = IntArray(width * height)
+                        for (i in 0 until (width * height)) {
+                            val o = i * 4
+                            val r = rgba[o].toInt() and 0xFF
+                            val g = rgba[o + 1].toInt() and 0xFF
+                            val b = rgba[o + 2].toInt() and 0xFF
+                            val a = rgba[o + 3].toInt() and 0xFF
+                            pixels[i] = (a shl 24) or (r shl 16) or (g shl 8) or b
+                        }
+                        val bmp = android.graphics.Bitmap.createBitmap(pixels, width, height, android.graphics.Bitmap.Config.ARGB_8888)
+                        val pngStream = java.io.ByteArrayOutputStream()
+                        bmp.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, pngStream)
+                        bmp.recycle()
+                        return pngStream.toByteArray()
+                    }
+                    Log.w(TAG, "decodeJp2ToPng: native openjpeg returned rgba too small (${rgba.size}) for ${width}x${height}")
                 }
             } catch (e: Exception) {
                 Log.w(TAG, "decodeJp2ToPng: native openjpeg failed: ${e.message}")
