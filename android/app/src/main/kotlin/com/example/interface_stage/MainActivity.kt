@@ -18,11 +18,21 @@ import com.takakotlin.usb.OpenJpegBridge
 
 class MainActivity: FlutterActivity() {    companion object {
         init {
-            // Prefer the CMake-built bridge when available; fall back to prebuilt wrapper.
+            // Load OpenJPEG runtime first so the bridge can resolve its dependency
+            // even when only libopenjp2wrapper.so is packaged.
+            try {
+                System.loadLibrary("openjp2wrapper")
+                Log.d("TAKA_USB", "Loaded openjp2wrapper")
+            } catch (e: UnsatisfiedLinkError) {
+                Log.w("TAKA_USB", "Could not load openjp2wrapper: ${e.message}")
+            }
+
+            // Then load the JNI bridge that implements OpenJpegBridge.decode(...)
             try {
                 System.loadLibrary("openjpeg_bridge")
-            } catch (_: UnsatisfiedLinkError) {
-                System.loadLibrary("openjp2wrapper")
+                Log.d("TAKA_USB", "Loaded openjpeg_bridge")
+            } catch (e: UnsatisfiedLinkError) {
+                Log.e("TAKA_USB", "Could not load openjpeg_bridge: ${e.message}")
             }
         }
     }
