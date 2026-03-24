@@ -18,6 +18,7 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
   bool _isLoading = false;
   String? _rawQrValue;
   String? _token;
+
   String? _serverResponse;
   String? _error;
 
@@ -44,6 +45,7 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
         _error = "Token introuvable dans le QR code.";
         _rawQrValue = rawValue;
         _token = null;
+
         _serverResponse = null;
       });
       return;
@@ -53,6 +55,7 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
       _scanLocked = true;
       _rawQrValue = rawValue;
       _token = extractedToken;
+
       _error = null;
       _serverResponse = null;
     });
@@ -75,6 +78,7 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
       }
     }
 
+
     return value;
   }
 
@@ -85,6 +89,7 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
       return null;
     }
   }
+
 
   Future<void> _callProtectedApi(String token) async {
     final String endpoint = _endpointController.text.trim();
@@ -97,10 +102,7 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
     }
 
     final Uri? uri = Uri.tryParse(endpoint);
-    if (uri == null || (!uri.hasScheme)) {
-      setState(() {
-        _isLoading = false;
-        _error = "URL API invalide.";
+
       });
       return;
     }
@@ -121,11 +123,7 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
 
       setState(() {
         _serverResponse =
-            "Status ${response.statusCode}\n\n${response.body.isEmpty ? '(Aucune donnée)' : response.body}";
-      });
-    } catch (exception) {
-      setState(() {
-        _error = "Erreur réseau: $exception";
+
       });
     } finally {
       setState(() {
@@ -139,6 +137,7 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
       _scanLocked = false;
       _rawQrValue = null;
       _token = null;
+
       _serverResponse = null;
       _error = null;
     });
@@ -189,11 +188,7 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
             ),
             const SizedBox(height: 12),
             if (_rawQrValue != null)
-              Text('QR brut: $_rawQrValue', style: const TextStyle(fontSize: 12)),
-            if (_token != null)
-              Text('Token: $_token', style: const TextStyle(fontWeight: FontWeight.w600)),
-            if (_error != null)
-              Text(_error!, style: const TextStyle(color: Colors.red)),
+
             if (_serverResponse != null)
               Expanded(
                 child: SingleChildScrollView(
