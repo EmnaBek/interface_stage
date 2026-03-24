@@ -79,6 +79,7 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
     }
 
 
+
     return value;
   }
 
@@ -89,6 +90,7 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
       return null;
     }
   }
+
 
 
   Future<void> _callProtectedApi(String token) async {
