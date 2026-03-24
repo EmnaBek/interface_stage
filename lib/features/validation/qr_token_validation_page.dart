@@ -18,7 +18,7 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
   bool _isLoading = false;
   String? _rawQrValue;
   String? _token;
-  String? _decodedPayload;
+
   String? _serverResponse;
   String? _error;
 
@@ -45,7 +45,7 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
         _error = "Token introuvable dans le QR code.";
         _rawQrValue = rawValue;
         _token = null;
-        _decodedPayload = null;
+
         _serverResponse = null;
       });
       return;
@@ -55,7 +55,7 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
       _scanLocked = true;
       _rawQrValue = rawValue;
       _token = extractedToken;
-      _decodedPayload = _decodeTokenPayload(extractedToken);
+
       _error = null;
       _serverResponse = null;
     });
@@ -78,9 +78,6 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
       }
     }
 
-    if (value.toLowerCase().startsWith('bearer ')) {
-      return value.substring(7).trim();
-    }
 
     return value;
   }
@@ -93,27 +90,6 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
     }
   }
 
-  String _decodeTokenPayload(String token) {
-    final List<String> parts = token.split('.');
-    if (parts.length < 2) {
-      return 'Ce token ne ressemble pas à un JWT (payload Base64 non détecté).';
-    }
-
-    try {
-      final String normalized = base64Url.normalize(parts[1]);
-      final List<int> payloadBytes = base64Url.decode(normalized);
-      final String payloadText = utf8.decode(payloadBytes);
-      final dynamic payloadJson = _tryDecodeJson(payloadText);
-
-      if (payloadJson != null) {
-        return const JsonEncoder.withIndent('  ').convert(payloadJson);
-      }
-
-      return payloadText;
-    } catch (_) {
-      return 'Impossible de décoder le payload Base64 du token.';
-    }
-  }
 
   Future<void> _callProtectedApi(String token) async {
     final String endpoint = _endpointController.text.trim();
@@ -126,10 +102,7 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
     }
 
     final Uri? uri = Uri.tryParse(endpoint);
-    if (uri == null || !uri.hasScheme) {
-      setState(() {
-        _isLoading = false;
-        _error = 'URL API invalide.';
+
       });
       return;
     }
@@ -150,11 +123,7 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
 
       setState(() {
         _serverResponse =
-            'Status ${response.statusCode}\n\n${response.body.isEmpty ? '(Aucune donnée)' : response.body}';
-      });
-    } catch (exception) {
-      setState(() {
-        _error = 'Erreur réseau: $exception';
+
       });
     } finally {
       setState(() {
@@ -168,7 +137,7 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
       _scanLocked = false;
       _rawQrValue = null;
       _token = null;
-      _decodedPayload = null;
+
       _serverResponse = null;
       _error = null;
     });
@@ -219,40 +188,7 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
             ),
             const SizedBox(height: 12),
             if (_rawQrValue != null)
-              Text(
-                'QR brut: $_rawQrValue',
-                style: const TextStyle(fontSize: 12),
-              ),
-            if (_token != null)
-              Text(
-                'Token: $_token',
-                style: const TextStyle(fontWeight: FontWeight.w600),
-              ),
-            if (_decodedPayload != null) ...[
-              const SizedBox(height: 8),
-              const Text(
-                'Payload décodé (Base64):',
-                style: TextStyle(fontWeight: FontWeight.w700),
-              ),
-              Container(
-                width: double.infinity,
-                margin: const EdgeInsets.only(top: 4),
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF4F4F4),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: SelectableText(_decodedPayload!),
-              ),
-            ],
-            if (_error != null)
-              Padding(
-                padding: const EdgeInsets.only(top: 8),
-                child: Text(
-                  _error!,
-                  style: const TextStyle(color: Colors.red),
-                ),
-              ),
+
             if (_serverResponse != null)
               Expanded(
                 child: SingleChildScrollView(
