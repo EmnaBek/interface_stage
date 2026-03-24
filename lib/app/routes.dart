@@ -6,6 +6,7 @@ import '../features/prestations/prestations_page.dart';
 import '../features/validation/validation_page.dart';
 import '../features/referentiel/referentiel_page.dart';
 import '../features/reclamation/reclamation_page.dart';
+import '../features/validation/qr_token_validation_page.dart';
 
 class AppRoutes {
   static const dashboard = '/';
@@ -15,6 +16,7 @@ class AppRoutes {
   static const validation = '/validation';
   static const referentiel = '/referentiel';
   static const reclamation = '/reclamation';
+  static const qrTokenValidation = '/qr-token-validation';
 
   static Map<String, WidgetBuilder> routes = {
     dashboard: (_) => const DashboardPage(),
@@ -24,5 +26,6 @@ class AppRoutes {
     validation: (_) => const ValidationPage(),
     referentiel: (_) => const ReferentielPage(),
     reclamation: (_) => const ReclamationPage(),
+    qrTokenValidation: (_) => const QrTokenValidationPage(),
   };
 }

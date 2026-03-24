@@ -92,6 +92,13 @@ class DashboardPage extends StatelessWidget {
                       onTap: () =>
                           Navigator.pushNamed(context, AppRoutes.reclamation),
                     ),
+
+                    DashboardTile(
+                      icon: Icons.qr_code_scanner,
+                      title: "Scan QR Token",
+                      onTap: () => Navigator.pushNamed(
+                          context, AppRoutes.qrTokenValidation),
+                    ),
                   ],
                 ),
               ),
