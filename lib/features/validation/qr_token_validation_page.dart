@@ -23,6 +23,7 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
   String? _jwtDecodeNote;
   Map<String, dynamic>? _decodedTokenClaims;
 
+
   @override
   void dispose() {
     _endpointController.dispose();
@@ -30,41 +31,30 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
   }
 
   Future<void> _handleDetection(BarcodeCapture capture) async {
-    if (_scanLocked || _isLoading) {
-      return;
-    }
+    if (_scanLocked || _isLoading) return;
 
     final String? rawValue =
         capture.barcodes.isNotEmpty ? capture.barcodes.first.rawValue : null;
-    if (rawValue == null || rawValue.trim().isEmpty) {
-      return;
-    }
+    if (rawValue == null || rawValue.trim().isEmpty) return;
 
     final String extractedToken = _extractToken(rawValue.trim());
     if (extractedToken.isEmpty) {
       setState(() {
-        _rawQrValue = rawValue;
-        _token = null;
-        _decodedTokenClaims = null;
-        _jwtDecodeNote = null;
-        _serverResponse = null;
-        _error = 'Token introuvable dans le QR code.';
+
       });
       return;
     }
 
     final Map<String, dynamic>? decodedClaims =
         _tryDecodeJwtPayload(extractedToken);
-    final String? decodeNote = decodedClaims == null
-        ? 'Token non-JWT valide (format attendu: header.payload.signature).'
-        : null;
+
 
     setState(() {
       _scanLocked = true;
       _rawQrValue = rawValue;
       _token = extractedToken;
       _decodedTokenClaims = decodedClaims;
-      _jwtDecodeNote = decodeNote;
+
       _error = null;
       _serverResponse = null;
     });
@@ -73,15 +63,14 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
   }
 
   String _extractToken(String value) {
-    final String source = value.trim();
-    final Uri? uri = Uri.tryParse(source);
+
 
     final String? tokenFromQuery = uri?.queryParameters['token'];
     if (tokenFromQuery != null && tokenFromQuery.isNotEmpty) {
       return _normalizeTokenCandidate(tokenFromQuery);
     }
 
-    final dynamic decoded = _tryDecodeJson(source);
+
     if (decoded is Map<String, dynamic>) {
       final dynamic tokenField = decoded['token'];
       if (tokenField is String && tokenField.isNotEmpty) {
@@ -91,6 +80,7 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
 
     return _normalizeTokenCandidate(source);
   }
+
 
   String _normalizeTokenCandidate(String value) {
     final String compact = value
@@ -106,7 +96,7 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
       return match.group(1) ?? compact;
     }
 
-    return compact;
+
   }
 
   dynamic _tryDecodeJson(String value) {
@@ -123,10 +113,18 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
       return null;
     }
 
+
+    return null;
+  }
+
+    return null;
+  }
+
     try {
       final String normalizedPayload = base64Url.normalize(parts[1]);
       final String payloadJson = utf8.decode(base64Url.decode(normalizedPayload));
       final dynamic decoded = jsonDecode(payloadJson);
+
       if (decoded is Map<String, dynamic>) {
         final dynamic exp = decoded['exp'];
         if (exp is int) {
@@ -154,7 +152,7 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
     }
 
     final Uri? uri = Uri.tryParse(endpoint);
-    if (uri == null || !uri.hasScheme || !uri.hasAuthority) {
+
       setState(() {
         _isLoading = false;
         _error = 'URL invalide. Exemple: https://api.exemple.com/path';
@@ -212,6 +210,7 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
       _jwtDecodeNote = null;
       _serverResponse = null;
       _error = null;
+      _isLoading = false;
     });
   }
 
@@ -306,7 +305,7 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
               ],
             ),
             const SizedBox(height: 12),
-            ...infoWidgets,
+
             if (_serverResponse != null)
               Expanded(
                 child: SingleChildScrollView(
