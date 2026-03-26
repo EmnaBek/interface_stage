@@ -18,9 +18,9 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
   bool _isLoading = false;
   String? _rawQrValue;
   String? _token;
-
   String? _serverResponse;
   String? _error;
+  Map<String, dynamic>? _decodedTokenClaims;
 
   @override
   void dispose() {
@@ -29,33 +29,32 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
   }
 
   Future<void> _handleDetection(BarcodeCapture capture) async {
-    if (_scanLocked || _isLoading) {
-      return;
-    }
+    if (_scanLocked || _isLoading) return;
 
     final String? rawValue =
         capture.barcodes.isNotEmpty ? capture.barcodes.first.rawValue : null;
-    if (rawValue == null || rawValue.trim().isEmpty) {
-      return;
-    }
+    if (rawValue == null || rawValue.trim().isEmpty) return;
 
     final String extractedToken = _extractToken(rawValue.trim());
     if (extractedToken.isEmpty) {
       setState(() {
-        _error = "Token introuvable dans le QR code.";
+        _error = 'Token introuvable dans le QR code.';
         _rawQrValue = rawValue;
         _token = null;
-
         _serverResponse = null;
+        _decodedTokenClaims = null;
       });
       return;
     }
+
+    final Map<String, dynamic>? decodedClaims =
+        _tryDecodeJwtPayload(extractedToken);
 
     setState(() {
       _scanLocked = true;
       _rawQrValue = rawValue;
       _token = extractedToken;
-
+      _decodedTokenClaims = decodedClaims;
       _error = null;
       _serverResponse = null;
     });
@@ -78,8 +77,6 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
       }
     }
 
-
-
     return value;
   }
 
@@ -91,7 +88,25 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
     }
   }
 
+  Map<String, dynamic>? _tryDecodeJwtPayload(String token) {
+    final List<String> parts = token.split('.');
+    if (parts.length != 3) {
+      return null;
+    }
 
+    try {
+      final String normalized = base64Url.normalize(parts[1]);
+      final String payload = utf8.decode(base64Url.decode(normalized));
+      final dynamic decoded = jsonDecode(payload);
+      if (decoded is Map<String, dynamic>) {
+        return decoded;
+      }
+    } catch (_) {
+      return null;
+    }
+
+    return null;
+  }
 
   Future<void> _callProtectedApi(String token) async {
     final String endpoint = _endpointController.text.trim();
@@ -104,7 +119,10 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
     }
 
     final Uri? uri = Uri.tryParse(endpoint);
-
+    if (uri == null || (!uri.hasScheme || !uri.hasAuthority)) {
+      setState(() {
+        _isLoading = false;
+        _error = 'URL invalide. Exemple: https://api.exemple.com/path';
       });
       return;
     }
@@ -115,7 +133,7 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
     });
 
     try {
-      final response = await http.get(
+      final http.Response response = await http.get(
         uri,
         headers: <String, String>{
           'Authorization': 'Bearer $token',
@@ -123,9 +141,15 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
         },
       );
 
+      final String prettyBody = _formatBody(response.body);
       setState(() {
         _serverResponse =
-
+            'HTTP ${response.statusCode}\n\nHeaders: ${response.headers}\n\n$prettyBody';
+      });
+    } catch (e) {
+      setState(() {
+        _error = 'Erreur réseau: $e';
+        _serverResponse = null;
       });
     } finally {
       setState(() {
@@ -134,14 +158,24 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
     }
   }
 
+  String _formatBody(String body) {
+    final dynamic decoded = _tryDecodeJson(body);
+    if (decoded != null) {
+      const JsonEncoder encoder = JsonEncoder.withIndent('  ');
+      return encoder.convert(decoded);
+    }
+    return body;
+  }
+
   void _resetScan() {
     setState(() {
       _scanLocked = false;
       _rawQrValue = null;
       _token = null;
-
+      _decodedTokenClaims = null;
       _serverResponse = null;
       _error = null;
+      _isLoading = false;
     });
   }
 
@@ -171,9 +205,7 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
               child: SizedBox(
                 height: 240,
                 width: double.infinity,
-                child: MobileScanner(
-                  onDetect: _handleDetection,
-                ),
+                child: MobileScanner(onDetect: _handleDetection),
               ),
             ),
             const SizedBox(height: 12),
@@ -189,8 +221,38 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
               ],
             ),
             const SizedBox(height: 12),
-            if (_rawQrValue != null)
-
+            if (_rawQrValue != null) ...[
+              Text('QR brut: $_rawQrValue'),
+              const SizedBox(height: 6),
+            ],
+            if (_token != null) ...[
+              Text('Token: $_token'),
+              const SizedBox(height: 6),
+            ],
+            if (_decodedTokenClaims != null) ...[
+              const Text('Token décodé (payload JWT):'),
+              const SizedBox(height: 4),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: SelectableText(
+                  const JsonEncoder.withIndent('  ')
+                      .convert(_decodedTokenClaims),
+                ),
+              ),
+              const SizedBox(height: 8),
+            ],
+            if (_error != null) ...[
+              Text(
+                _error!,
+                style: TextStyle(color: Theme.of(context).colorScheme.error),
+              ),
+              const SizedBox(height: 6),
+            ],
             if (_serverResponse != null)
               Expanded(
                 child: SingleChildScrollView(
