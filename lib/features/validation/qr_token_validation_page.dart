@@ -21,7 +21,7 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
   String? _serverResponse;
   String? _error;
   Map<String, dynamic>? _decodedTokenClaims;
-  String? _jwtDecodeNote;
+
 
   @override
   void dispose() {
@@ -44,7 +44,7 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
         _token = null;
         _serverResponse = null;
         _decodedTokenClaims = null;
-        _jwtDecodeNote = null;
+
       });
       return;
     }
@@ -83,17 +83,7 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
       }
     }
 
-    return _normalizeTokenCandidate(sanitizedValue);
-  }
 
-  String _normalizeTokenCandidate(String value) {
-    final String compact = value.trim().replaceAll('\n', '').replaceAll('\r', '');
-    final RegExp jwtPattern = RegExp(r'([A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+)');
-    final RegExpMatch? match = jwtPattern.firstMatch(compact);
-    if (match != null) {
-      return match.group(1) ?? compact;
-    }
-    return compact;
   }
 
   dynamic _tryDecodeJson(String value) {
@@ -127,8 +117,6 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
       return null;
     }
 
-    return null;
-  }
 
   Future<void> _callProtectedApi(String token) async {
     final String endpoint = _endpointController.text.trim();
@@ -249,33 +237,7 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
               const SizedBox(height: 6),
             ],
             if (_token != null) ...[
-              SelectableText('Token: $_token'),
-              const SizedBox(height: 6),
-            ],
-            if (_decodedTokenClaims != null) ...[
-              const Text('Token décodé (payload JWT):'),
-              const SizedBox(height: 4),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: SelectableText(
-                  const JsonEncoder.withIndent('  ')
-                      .convert(_decodedTokenClaims),
-                ),
-              ),
-              const SizedBox(height: 8),
-            ],
-            if (_jwtDecodeNote != null) ...[
-              Text(
-                _jwtDecodeNote!,
-                style: TextStyle(color: Theme.of(context).colorScheme.secondary),
-              ),
-              const SizedBox(height: 8),
-            ],
+
             if (_error != null) ...[
               Text(
                 _error!,
