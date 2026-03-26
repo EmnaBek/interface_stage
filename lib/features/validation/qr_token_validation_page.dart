@@ -20,6 +20,8 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
   String? _token;
   String? _serverResponse;
   String? _error;
+  String? _jwtDecodeNote;
+  Map<String, dynamic>? _decodedTokenClaims;
 
 
   @override
@@ -62,6 +64,7 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
 
   String _extractToken(String value) {
 
+
     final String? tokenFromQuery = uri?.queryParameters['token'];
     if (tokenFromQuery != null && tokenFromQuery.isNotEmpty) {
       return _normalizeTokenCandidate(tokenFromQuery);
@@ -79,9 +82,15 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
   }
 
 
-    final RegExp jwtPattern = RegExp(
-      r'([A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+)',
-    );
+  String _normalizeTokenCandidate(String value) {
+    final String compact = value
+        .trim()
+        .replaceAll('\n', '')
+        .replaceAll('\r', '')
+        .replaceAll(' ', '');
+
+    final RegExp jwtPattern =
+        RegExp(r'([A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+)');
     final RegExpMatch? match = jwtPattern.firstMatch(compact);
     if (match != null) {
       return match.group(1) ?? compact;
@@ -104,6 +113,9 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
       return null;
     }
 
+
+    return null;
+  }
 
     return null;
   }
@@ -204,6 +216,57 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
 
   @override
   Widget build(BuildContext context) {
+    final List<Widget> infoWidgets = <Widget>[];
+
+    if (_rawQrValue != null) {
+      infoWidgets.add(SelectableText('QR brut: $_rawQrValue'));
+      infoWidgets.add(const SizedBox(height: 6));
+    }
+
+    if (_token != null) {
+      infoWidgets.add(SelectableText('Token: $_token'));
+      infoWidgets.add(const SizedBox(height: 6));
+    }
+
+    if (_decodedTokenClaims != null) {
+      infoWidgets.add(const Text('Token décodé (payload JWT):'));
+      infoWidgets.add(const SizedBox(height: 4));
+      infoWidgets.add(
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surfaceContainerHighest,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: SelectableText(
+            const JsonEncoder.withIndent('  ').convert(_decodedTokenClaims),
+          ),
+        ),
+      );
+      infoWidgets.add(const SizedBox(height: 8));
+    }
+
+    if (_jwtDecodeNote != null) {
+      infoWidgets.add(
+        Text(
+          _jwtDecodeNote!,
+          style: TextStyle(color: Theme.of(context).colorScheme.secondary),
+        ),
+      );
+      infoWidgets.add(const SizedBox(height: 8));
+    }
+
+    if (_error != null) {
+      infoWidgets.add(
+        Text(
+          _error!,
+          style: TextStyle(color: Theme.of(context).colorScheme.error),
+        ),
+      );
+      infoWidgets.add(const SizedBox(height: 6));
+    }
+
     return Scaffold(
       appBar: AppBar(title: const Text('Scan QR + Token')),
       body: Padding(
@@ -243,12 +306,6 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
             ),
             const SizedBox(height: 12),
 
-              Text(
-                _error!,
-                style: TextStyle(color: Theme.of(context).colorScheme.error),
-              ),
-              const SizedBox(height: 6),
-            ],
             if (_serverResponse != null)
               Expanded(
                 child: SingleChildScrollView(
