@@ -22,6 +22,7 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
   String? _error;
   Map<String, dynamic>? _decodedTokenClaims;
 
+
   @override
   void dispose() {
     _endpointController.dispose();
@@ -43,6 +44,7 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
         _token = null;
         _serverResponse = null;
         _decodedTokenClaims = null;
+
       });
       return;
     }
@@ -54,7 +56,10 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
       _scanLocked = true;
       _rawQrValue = rawValue;
       _token = extractedToken;
-
+      _decodedTokenClaims = decodedClaims;
+      _jwtDecodeNote = decodedClaims == null
+          ? "Le token n'est pas un JWT valide (format attendu: header.payload.signature)."
+          : null;
       _error = null;
       _serverResponse = null;
     });
@@ -63,21 +68,22 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
   }
 
   String _extractToken(String value) {
-    final Uri? uri = Uri.tryParse(value);
+    final String sanitizedValue = value.trim();
+    final Uri? uri = Uri.tryParse(sanitizedValue);
     final String? tokenFromQuery = uri?.queryParameters['token'];
     if (tokenFromQuery != null && tokenFromQuery.isNotEmpty) {
-      return tokenFromQuery;
+      return _normalizeTokenCandidate(tokenFromQuery);
     }
 
-    final dynamic decoded = _tryDecodeJson(value);
+    final dynamic decoded = _tryDecodeJson(sanitizedValue);
     if (decoded is Map<String, dynamic>) {
       final dynamic tokenField = decoded['token'];
       if (tokenField is String && tokenField.isNotEmpty) {
-        return tokenField;
+        return _normalizeTokenCandidate(tokenField);
       }
     }
 
-    return value;
+
   }
 
   dynamic _tryDecodeJson(String value) {
@@ -87,6 +93,29 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
       return null;
     }
   }
+
+  Map<String, dynamic>? _tryDecodeJwtPayload(String token) {
+    final List<String> parts = token.split('.');
+    if (parts.length != 3) {
+      return null;
+    }
+
+    try {
+      final String normalized = base64Url.normalize(parts[1]);
+      final String payload = utf8.decode(base64Url.decode(normalized));
+      final dynamic decoded = jsonDecode(payload);
+      if (decoded is Map<String, dynamic>) {
+        final dynamic exp = decoded['exp'];
+        if (exp is int) {
+          decoded['exp_readable_utc'] =
+              DateTime.fromMillisecondsSinceEpoch(exp * 1000, isUtc: true)
+                  .toIso8601String();
+        }
+        return decoded;
+      }
+    } catch (_) {
+      return null;
+    }
 
 
   Future<void> _callProtectedApi(String token) async {
@@ -153,7 +182,8 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
       _scanLocked = false;
       _rawQrValue = null;
       _token = null;
-
+      _decodedTokenClaims = null;
+      _jwtDecodeNote = null;
       _serverResponse = null;
       _error = null;
       _isLoading = false;
@@ -207,9 +237,6 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
               const SizedBox(height: 6),
             ],
             if (_token != null) ...[
-              Text('Token: $_token'),
-              const SizedBox(height: 6),
-            ],
 
             if (_error != null) ...[
               Text(
