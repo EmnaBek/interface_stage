@@ -20,7 +20,7 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
   String? _token;
   String? _serverResponse;
   String? _error;
-n
+
 
   @override
   void dispose() {
@@ -46,14 +46,13 @@ n
     final Map<String, dynamic>? decodedClaims =
         _tryDecodeJwtPayload(extractedToken);
 
+
     setState(() {
       _scanLocked = true;
       _rawQrValue = rawValue;
       _token = extractedToken;
       _decodedTokenClaims = decodedClaims;
-      _jwtDecodeNote = decodedClaims == null
 
-          : null;
       _error = null;
       _serverResponse = null;
     });
@@ -80,6 +79,15 @@ n
   }
 
 
+    final RegExp jwtPattern = RegExp(
+      r'([A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+)',
+    );
+    final RegExpMatch? match = jwtPattern.firstMatch(compact);
+    if (match != null) {
+      return match.group(1) ?? compact;
+    }
+
+
   }
 
   dynamic _tryDecodeJson(String value) {
@@ -96,6 +104,9 @@ n
       return null;
     }
 
+
+    return null;
+  }
 
     try {
       final String normalizedPayload = base64Url.normalize(parts[1]);
