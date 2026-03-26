@@ -20,6 +20,7 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
   String? _token;
   String? _serverResponse;
   String? _error;
+  Map<String, dynamic>? _decodedTokenClaims;
 
   @override
   void dispose() {
@@ -41,14 +42,19 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
         _rawQrValue = rawValue;
         _token = null;
         _serverResponse = null;
+        _decodedTokenClaims = null;
       });
       return;
     }
+
+    final Map<String, dynamic>? decodedClaims =
+        _tryDecodeJwtPayload(extractedToken);
 
     setState(() {
       _scanLocked = true;
       _rawQrValue = rawValue;
       _token = extractedToken;
+
       _error = null;
       _serverResponse = null;
     });
@@ -81,6 +87,7 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
       return null;
     }
   }
+
 
   Future<void> _callProtectedApi(String token) async {
     final String endpoint = _endpointController.text.trim();
@@ -146,6 +153,7 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
       _scanLocked = false;
       _rawQrValue = null;
       _token = null;
+
       _serverResponse = null;
       _error = null;
       _isLoading = false;
@@ -202,6 +210,7 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
               Text('Token: $_token'),
               const SizedBox(height: 6),
             ],
+
             if (_error != null) ...[
               Text(
                 _error!,
