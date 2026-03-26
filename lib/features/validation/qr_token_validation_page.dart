@@ -20,8 +20,7 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
   String? _token;
   String? _serverResponse;
   String? _error;
-  Map<String, dynamic>? _decodedTokenClaims;
-
+n
 
   @override
   void dispose() {
@@ -39,11 +38,6 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
     final String extractedToken = _extractToken(rawValue.trim());
     if (extractedToken.isEmpty) {
       setState(() {
-        _error = 'Token introuvable dans le QR code.';
-        _rawQrValue = rawValue;
-        _token = null;
-        _serverResponse = null;
-        _decodedTokenClaims = null;
 
       });
       return;
@@ -58,7 +52,7 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
       _token = extractedToken;
       _decodedTokenClaims = decodedClaims;
       _jwtDecodeNote = decodedClaims == null
-          ? "Le token n'est pas un JWT valide (format attendu: header.payload.signature)."
+
           : null;
       _error = null;
       _serverResponse = null;
@@ -68,20 +62,22 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
   }
 
   String _extractToken(String value) {
-    final String sanitizedValue = value.trim();
-    final Uri? uri = Uri.tryParse(sanitizedValue);
+
     final String? tokenFromQuery = uri?.queryParameters['token'];
     if (tokenFromQuery != null && tokenFromQuery.isNotEmpty) {
       return _normalizeTokenCandidate(tokenFromQuery);
     }
 
-    final dynamic decoded = _tryDecodeJson(sanitizedValue);
+
     if (decoded is Map<String, dynamic>) {
       final dynamic tokenField = decoded['token'];
       if (tokenField is String && tokenField.isNotEmpty) {
         return _normalizeTokenCandidate(tokenField);
       }
     }
+
+    return _normalizeTokenCandidate(source);
+  }
 
 
   }
@@ -100,10 +96,12 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
       return null;
     }
 
+
     try {
-      final String normalized = base64Url.normalize(parts[1]);
-      final String payload = utf8.decode(base64Url.decode(normalized));
-      final dynamic decoded = jsonDecode(payload);
+      final String normalizedPayload = base64Url.normalize(parts[1]);
+      final String payloadJson = utf8.decode(base64Url.decode(normalizedPayload));
+      final dynamic decoded = jsonDecode(payloadJson);
+
       if (decoded is Map<String, dynamic>) {
         final dynamic exp = decoded['exp'];
         if (exp is int) {
@@ -117,6 +115,8 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
       return null;
     }
 
+    return null;
+  }
 
   Future<void> _callProtectedApi(String token) async {
     final String endpoint = _endpointController.text.trim();
@@ -129,7 +129,7 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
     }
 
     final Uri? uri = Uri.tryParse(endpoint);
-    if (uri == null || (!uri.hasScheme || !uri.hasAuthority)) {
+
       setState(() {
         _isLoading = false;
         _error = 'URL invalide. Exemple: https://api.exemple.com/path';
@@ -180,6 +180,7 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
   void _resetScan() {
     setState(() {
       _scanLocked = false;
+      _isLoading = false;
       _rawQrValue = null;
       _token = null;
       _decodedTokenClaims = null;
@@ -193,14 +194,12 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Scan QR + Token'),
-      ),
+      appBar: AppBar(title: const Text('Scan QR + Token')),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+          children: <Widget>[
             TextField(
               controller: _endpointController,
               keyboardType: TextInputType.url,
@@ -221,7 +220,7 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
             ),
             const SizedBox(height: 12),
             Row(
-              children: [
+              children: <Widget>[
                 FilledButton.icon(
                   onPressed: _scanLocked ? _resetScan : null,
                   icon: const Icon(Icons.refresh),
@@ -232,13 +231,7 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
               ],
             ),
             const SizedBox(height: 12),
-            if (_rawQrValue != null) ...[
-              Text('QR brut: $_rawQrValue'),
-              const SizedBox(height: 6),
-            ],
-            if (_token != null) ...[
 
-            if (_error != null) ...[
               Text(
                 _error!,
                 style: TextStyle(color: Theme.of(context).colorScheme.error),
