@@ -54,7 +54,7 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
       _scanLocked = true;
       _rawQrValue = rawValue;
       _token = extractedToken;
-      _decodedTokenClaims = decodedClaims;
+
       _error = null;
       _serverResponse = null;
     });
@@ -88,25 +88,6 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
     }
   }
 
-  Map<String, dynamic>? _tryDecodeJwtPayload(String token) {
-    final List<String> parts = token.split('.');
-    if (parts.length != 3) {
-      return null;
-    }
-
-    try {
-      final String normalized = base64Url.normalize(parts[1]);
-      final String payload = utf8.decode(base64Url.decode(normalized));
-      final dynamic decoded = jsonDecode(payload);
-      if (decoded is Map<String, dynamic>) {
-        return decoded;
-      }
-    } catch (_) {
-      return null;
-    }
-
-    return null;
-  }
 
   Future<void> _callProtectedApi(String token) async {
     final String endpoint = _endpointController.text.trim();
@@ -172,7 +153,7 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
       _scanLocked = false;
       _rawQrValue = null;
       _token = null;
-      _decodedTokenClaims = null;
+
       _serverResponse = null;
       _error = null;
       _isLoading = false;
@@ -229,23 +210,7 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
               Text('Token: $_token'),
               const SizedBox(height: 6),
             ],
-            if (_decodedTokenClaims != null) ...[
-              const Text('Token décodé (payload JWT):'),
-              const SizedBox(height: 4),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: SelectableText(
-                  const JsonEncoder.withIndent('  ')
-                      .convert(_decodedTokenClaims),
-                ),
-              ),
-              const SizedBox(height: 8),
-            ],
+
             if (_error != null) ...[
               Text(
                 _error!,
