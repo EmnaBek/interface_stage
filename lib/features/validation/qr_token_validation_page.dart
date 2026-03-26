@@ -20,8 +20,7 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
   String? _token;
   String? _serverResponse;
   String? _error;
-  String? _jwtDecodeNote;
-  Map<String, dynamic>? _decodedTokenClaims;
+
 
   @override
   void dispose() {
@@ -30,25 +29,16 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
   }
 
   Future<void> _handleDetection(BarcodeCapture capture) async {
-    if (_scanLocked || _isLoading) {
-      return;
-    }
+    if (_scanLocked || _isLoading) return;
 
     final String? rawValue =
         capture.barcodes.isNotEmpty ? capture.barcodes.first.rawValue : null;
-    if (rawValue == null || rawValue.trim().isEmpty) {
-      return;
-    }
+    if (rawValue == null || rawValue.trim().isEmpty) return;
 
     final String extractedToken = _extractToken(rawValue.trim());
     if (extractedToken.isEmpty) {
       setState(() {
-        _rawQrValue = rawValue;
-        _token = null;
-        _decodedTokenClaims = null;
-        _jwtDecodeNote = null;
-        _serverResponse = null;
-        _error = 'Token introuvable dans le QR code.';
+
       });
       return;
     }
@@ -56,16 +46,13 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
     final Map<String, dynamic>? decodedClaims =
         _tryDecodeJwtPayload(extractedToken);
 
-    final String? decodeNote = decodedClaims == null
-        ? 'Token non-JWT valide (format attendu: header.payload.signature).'
-        : null;
 
     setState(() {
       _scanLocked = true;
       _rawQrValue = rawValue;
       _token = extractedToken;
       _decodedTokenClaims = decodedClaims;
-      _jwtDecodeNote = decodeNote;
+
       _error = null;
       _serverResponse = null;
     });
@@ -74,15 +61,13 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
   }
 
   String _extractToken(String value) {
-    final String source = value.trim();
 
-    final Uri? uri = Uri.tryParse(source);
     final String? tokenFromQuery = uri?.queryParameters['token'];
     if (tokenFromQuery != null && tokenFromQuery.isNotEmpty) {
       return _normalizeTokenCandidate(tokenFromQuery);
     }
 
-    final dynamic decoded = _tryDecodeJson(source);
+
     if (decoded is Map<String, dynamic>) {
       final dynamic tokenField = decoded['token'];
       if (tokenField is String && tokenField.isNotEmpty) {
@@ -93,9 +78,6 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
     return _normalizeTokenCandidate(source);
   }
 
-  String _normalizeTokenCandidate(String value) {
-    final String compact =
-        value.trim().replaceAll('\n', '').replaceAll('\r', '').replaceAll(' ', '');
 
     final RegExp jwtPattern = RegExp(
       r'([A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+)',
@@ -105,7 +87,7 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
       return match.group(1) ?? compact;
     }
 
-    return compact;
+
   }
 
   dynamic _tryDecodeJson(String value) {
@@ -121,6 +103,10 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
     if (parts.length != 3) {
       return null;
     }
+
+
+    return null;
+  }
 
     try {
       final String normalizedPayload = base64Url.normalize(parts[1]);
@@ -154,7 +140,7 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
     }
 
     final Uri? uri = Uri.tryParse(endpoint);
-    if (uri == null || !uri.hasScheme || !uri.hasAuthority) {
+
       setState(() {
         _isLoading = false;
         _error = 'URL invalide. Exemple: https://api.exemple.com/path';
@@ -212,6 +198,7 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
       _jwtDecodeNote = null;
       _serverResponse = null;
       _error = null;
+      _isLoading = false;
     });
   }
 
@@ -255,39 +242,7 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
               ],
             ),
             const SizedBox(height: 12),
-            if (_rawQrValue != null) ...<Widget>[
-              SelectableText('QR brut: $_rawQrValue'),
-              const SizedBox(height: 6),
-            ],
-            if (_token != null) ...<Widget>[
-              SelectableText('Token: $_token'),
-              const SizedBox(height: 6),
-            ],
-            if (_decodedTokenClaims != null) ...<Widget>[
-              const Text('Token décodé (payload JWT):'),
-              const SizedBox(height: 4),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: SelectableText(
-                  const JsonEncoder.withIndent('  ')
-                      .convert(_decodedTokenClaims),
-                ),
-              ),
-              const SizedBox(height: 8),
-            ],
-            if (_jwtDecodeNote != null) ...<Widget>[
-              Text(
-                _jwtDecodeNote!,
-                style: TextStyle(color: Theme.of(context).colorScheme.secondary),
-              ),
-              const SizedBox(height: 8),
-            ],
-            if (_error != null) ...<Widget>[
+
               Text(
                 _error!,
                 style: TextStyle(color: Theme.of(context).colorScheme.error),
