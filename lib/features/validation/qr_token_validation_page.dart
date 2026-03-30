@@ -63,22 +63,19 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
   }
 
   String _extractToken(String value) {
-
-
+    final Uri? uri = Uri.tryParse(value);
     final String? tokenFromQuery = uri?.queryParameters['token'];
     if (tokenFromQuery != null && tokenFromQuery.isNotEmpty) {
       return _normalizeTokenCandidate(tokenFromQuery);
     }
-
-
+    final dynamic decoded = _tryDecodeJson(value);
     if (decoded is Map<String, dynamic>) {
       final dynamic tokenField = decoded['token'];
       if (tokenField is String && tokenField.isNotEmpty) {
         return _normalizeTokenCandidate(tokenField);
       }
     }
-
-    return _normalizeTokenCandidate(source);
+    return _normalizeTokenCandidate(value);
   }
 
 
@@ -95,8 +92,7 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
     if (match != null) {
       return match.group(1) ?? compact;
     }
-
-
+    return compact;
   }
 
   dynamic _tryDecodeJson(String value) {
@@ -112,13 +108,6 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
     if (parts.length != 3) {
       return null;
     }
-
-
-    return null;
-  }
-
-    return null;
-  }
 
     try {
       final String normalizedPayload = base64Url.normalize(parts[1]);
@@ -152,7 +141,7 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
     }
 
     final Uri? uri = Uri.tryParse(endpoint);
-
+    if (uri == null || !(uri.isScheme('http') || uri.isScheme('https'))) {
       setState(() {
         _isLoading = false;
         _error = 'URL invalide. Exemple: https://api.exemple.com/path';
