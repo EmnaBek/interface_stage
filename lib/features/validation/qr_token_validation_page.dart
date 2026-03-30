@@ -40,7 +40,8 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
     final String extractedToken = _extractToken(rawValue.trim());
     if (extractedToken.isEmpty) {
       setState(() {
-
+        _rawQrValue = rawValue;
+        _error = 'Aucun token exploitable trouvé dans le QR.';
       });
       return;
     }
@@ -54,6 +55,9 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
       _rawQrValue = rawValue;
       _token = extractedToken;
       _decodedTokenClaims = decodedClaims;
+      _jwtDecodeNote = decodedClaims == null
+          ? 'Token détecté, mais payload JWT illisible (ou token non-JWT).'
+          : null;
 
       _error = null;
       _serverResponse = null;
@@ -294,6 +298,17 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
               ],
             ),
             const SizedBox(height: 12),
+            if (infoWidgets.isNotEmpty) ...<Widget>[
+              Expanded(
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: infoWidgets,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+            ],
 
             if (_serverResponse != null)
               Expanded(
