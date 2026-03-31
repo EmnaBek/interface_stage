@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:mobile_scanner/mobile_scanner.dart';
+import '../../core/session/user_session.dart';
 
 class QrTokenValidationPage extends StatefulWidget {
   const QrTokenValidationPage({super.key});
@@ -63,7 +64,14 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
       _serverResponse = null;
     });
 
-    await _callProtectedApi(extractedToken);
+    final String? displayName = _extractDisplayName(decodedClaims);
+    if (displayName != null && displayName.isNotEmpty) {
+      UserSession.displayName.value = displayName;
+    }
+
+    if (_endpointController.text.trim().isNotEmpty) {
+      await _callProtectedApi(extractedToken);
+    }
   }
 
   String _extractToken(String value) {
@@ -131,6 +139,28 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
       return null;
     }
 
+    return null;
+  }
+
+  String? _extractDisplayName(Map<String, dynamic>? claims) {
+    if (claims == null) return null;
+    const List<String> candidateKeys = <String>[
+      'display_name',
+      'displayName',
+      'name',
+      'fullname',
+      'full_name',
+      'preferred_username',
+      'username',
+      'sub',
+    ];
+
+    for (final String key in candidateKeys) {
+      final dynamic value = claims[key];
+      if (value is String && value.trim().isNotEmpty) {
+        return value.trim();
+      }
+    }
     return null;
   }
 
