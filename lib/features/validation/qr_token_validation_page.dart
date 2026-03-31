@@ -50,7 +50,6 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
     final Map<String, dynamic>? decodedClaims =
         _tryDecodeJwtPayload(extractedToken);
 
-
     setState(() {
       _scanLocked = true;
       _rawQrValue = rawValue;
@@ -67,6 +66,7 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
     final String? displayName = _extractDisplayName(decodedClaims);
     if (displayName != null && displayName.isNotEmpty) {
       UserSession.displayName.value = displayName;
+
 
   String _extractToken(String value) {
     final Uri? uri = Uri.tryParse(value);
@@ -138,6 +138,7 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
 
   String? _extractDisplayName(Map<String, dynamic>? claims) {
     if (claims == null) return null;
+
 
     }
     return null;
@@ -212,7 +213,6 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
       _jwtDecodeNote = null;
       _serverResponse = null;
       _error = null;
-      _isLoading = false;
     });
   }
 
