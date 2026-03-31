@@ -5,6 +5,8 @@ import 'package:http/http.dart' as http;
 import 'package:mobile_scanner/mobile_scanner.dart';
 import '../../core/session/user_session.dart';
 
+import '../../core/session/user_session.dart';
+
 class QrTokenValidationPage extends StatefulWidget {
   const QrTokenValidationPage({super.key});
 
@@ -23,7 +25,6 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
   String? _error;
   String? _jwtDecodeNote;
   Map<String, dynamic>? _decodedTokenClaims;
-
 
   @override
   void dispose() {
@@ -74,6 +75,7 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
     if (tokenFromQuery != null && tokenFromQuery.isNotEmpty) {
       return _normalizeTokenCandidate(tokenFromQuery);
     }
+
     final dynamic decoded = _tryDecodeJson(value);
     if (decoded is Map<String, dynamic>) {
       final dynamic tokenField = decoded['token'];
@@ -81,16 +83,13 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
         return _normalizeTokenCandidate(tokenField);
       }
     }
+
     return _normalizeTokenCandidate(value);
   }
 
-
   String _normalizeTokenCandidate(String value) {
-    final String compact = value
-        .trim()
-        .replaceAll('\n', '')
-        .replaceAll('\r', '')
-        .replaceAll(' ', '');
+    final String compact =
+        value.trim().replaceAll('\n', '').replaceAll('\r', '').replaceAll(' ', '');
 
     final RegExp jwtPattern =
         RegExp(r'([A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+)');
@@ -98,6 +97,7 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
     if (match != null) {
       return match.group(1) ?? compact;
     }
+
     return compact;
   }
 
@@ -140,7 +140,6 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
     if (claims == null) return null;
 
 
-    }
     return null;
   }
 
