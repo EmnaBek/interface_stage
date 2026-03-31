@@ -68,13 +68,6 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
     if (displayName != null && displayName.isNotEmpty) {
       UserSession.displayName.value = displayName;
 
-    }
-
-    if (_endpointController.text.trim().isNotEmpty) {
-      await _callProtectedApi(extractedToken);
-    }
-  }
-
   String _extractToken(String value) {
     final Uri? uri = Uri.tryParse(value);
     final String? tokenFromQuery = uri?.queryParameters['token'];
@@ -145,22 +138,7 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
 
   String? _extractDisplayName(Map<String, dynamic>? claims) {
     if (claims == null) return null;
-    const List<String> candidateKeys = <String>[
-      'display_name',
-      'displayName',
-      'name',
-      'fullname',
-      'full_name',
-      'preferred_username',
-      'username',
-      'sub',
-    ];
 
-    for (final String key in candidateKeys) {
-      final dynamic value = claims[key];
-      if (value is String && value.trim().isNotEmpty) {
-        return value.trim();
-      }
     }
     return null;
   }
