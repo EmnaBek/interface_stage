@@ -67,16 +67,6 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
     final String? displayName = _extractDisplayName(decodedClaims);
     if (displayName != null && displayName.isNotEmpty) {
       UserSession.displayName.value = displayName;
-      if (mounted && Navigator.of(context).canPop()) {
-        Navigator.of(context).pop();
-        return;
-      }
-    }
-
-    if (_endpointController.text.trim().isNotEmpty) {
-      await _callProtectedApi(extractedToken);
-    }
-  }
 
   String _extractToken(String value) {
     final Uri? uri = Uri.tryParse(value);
@@ -149,77 +139,6 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
   String? _extractDisplayName(Map<String, dynamic>? claims) {
     if (claims == null) return null;
 
-    final String? fromGivenAndFamily = _joinNameParts(claims);
-    if (fromGivenAndFamily != null) return fromGivenAndFamily;
-
-    const Set<String> candidateKeys = <String>{
-      'display_name',
-      'displayname',
-      'display-name',
-      'name',
-      'fullname',
-      'full_name',
-      'full-name',
-      'preferred_username',
-      'preferredusername',
-      'username',
-      'user_name',
-      'nom',
-      'prenom',
-      'agent_name',
-      'agentname',
-      'sub',
-    };
-
-    final String? recursiveMatch = _findDisplayNameRecursively(
-      claims,
-      candidateKeys: candidateKeys,
-    );
-    if (recursiveMatch != null) return recursiveMatch;
-
-    return null;
-  }
-
-  String? _joinNameParts(Map<String, dynamic> claims) {
-    const List<String> givenNameKeys = <String>['given_name', 'givenname', 'prenom'];
-    const List<String> familyNameKeys = <String>['family_name', 'familyname', 'nom'];
-
-    String? findFirst(List<String> keys) {
-      for (final String key in keys) {
-        final dynamic value = claims[key];
-        if (value is String && value.trim().isNotEmpty) {
-          return value.trim();
-        }
-      }
-      return null;
-    }
-
-    final String? givenName = findFirst(givenNameKeys);
-    final String? familyName = findFirst(familyNameKeys);
-    if (givenName != null && familyName != null) {
-      return '$givenName $familyName';
-    }
-    return givenName ?? familyName;
-  }
-
-  String? _findDisplayNameRecursively(
-    dynamic node, {
-    required Set<String> candidateKeys,
-  }) {
-    if (node is! Map) return null;
-    for (final MapEntry<dynamic, dynamic> entry in node.entries) {
-      final String normalizedKey = entry.key.toString().toLowerCase();
-      final dynamic value = entry.value;
-      if (candidateKeys.contains(normalizedKey) &&
-          value is String &&
-          value.trim().isNotEmpty) {
-        return value.trim();
-      }
-      final String? nested = _findDisplayNameRecursively(
-        value,
-        candidateKeys: candidateKeys,
-      );
-      if (nested != null) return nested;
     }
     return null;
   }
