@@ -14,22 +14,7 @@ class DashboardPage extends StatefulWidget {
 class _DashboardPageState extends State<DashboardPage> {
   bool _hasAutoOpenedScanner = false;
 
-  Widget _buildCenterTitle() {
-    return ValueListenableBuilder<String?>(
-      valueListenable: UserSession.displayName,
-      builder: (BuildContext context, String? value, Widget? child) {
-        final String title =
-            (value == null || value.isEmpty) ? "CS Ahomey Lokpo" : value;
-        return Text(
-          title,
-          style: const TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
-        );
-      },
-    );
-  }
+
 
   @override
   void didChangeDependencies() {
@@ -64,7 +49,7 @@ class _DashboardPageState extends State<DashboardPage> {
               const SizedBox(height: 16),
 
               /// CENTER TITLE
-              _buildCenterTitle(),
+
 
               const SizedBox(height: 16),
 

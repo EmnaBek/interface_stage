@@ -67,10 +67,7 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
     final String? displayName = _extractDisplayName(decodedClaims);
     if (displayName != null && displayName.isNotEmpty) {
       UserSession.displayName.value = displayName;
-      if (mounted && Navigator.of(context).canPop()) {
-        Navigator.of(context).pop();
-        return;
-      }
+
     }
 
     if (_endpointController.text.trim().isNotEmpty) {
