@@ -15,6 +15,7 @@ class _DashboardPageState extends State<DashboardPage> {
   bool _hasAutoOpenedScanner = false;
 
 
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();

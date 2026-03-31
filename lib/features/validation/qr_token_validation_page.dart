@@ -67,6 +67,7 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
     final String? displayName = _extractDisplayName(decodedClaims);
     if (displayName != null && displayName.isNotEmpty) {
       UserSession.displayName.value = displayName;
+
     }
 
     if (_endpointController.text.trim().isNotEmpty) {
