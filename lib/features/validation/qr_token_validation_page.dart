@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:mobile_scanner/mobile_scanner.dart';
+import '../../core/session/user_session.dart';
 
 class QrTokenValidationPage extends StatefulWidget {
   const QrTokenValidationPage({super.key});
@@ -40,7 +41,8 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
     final String extractedToken = _extractToken(rawValue.trim());
     if (extractedToken.isEmpty) {
       setState(() {
-
+        _rawQrValue = rawValue;
+        _error = 'Aucun token exploitable trouvé dans le QR.';
       });
       return;
     }
@@ -54,31 +56,42 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
       _rawQrValue = rawValue;
       _token = extractedToken;
       _decodedTokenClaims = decodedClaims;
+      _jwtDecodeNote = decodedClaims == null
+          ? 'Token détecté, mais payload JWT illisible (ou token non-JWT).'
+          : null;
 
       _error = null;
       _serverResponse = null;
     });
 
-    await _callProtectedApi(extractedToken);
+    final String? displayName = _extractDisplayName(decodedClaims);
+    if (displayName != null && displayName.isNotEmpty) {
+      UserSession.displayName.value = displayName;
+      if (mounted && Navigator.of(context).canPop()) {
+        Navigator.of(context).pop();
+        return;
+      }
+    }
+
+    if (_endpointController.text.trim().isNotEmpty) {
+      await _callProtectedApi(extractedToken);
+    }
   }
 
   String _extractToken(String value) {
-
-
+    final Uri? uri = Uri.tryParse(value);
     final String? tokenFromQuery = uri?.queryParameters['token'];
     if (tokenFromQuery != null && tokenFromQuery.isNotEmpty) {
       return _normalizeTokenCandidate(tokenFromQuery);
     }
-
-
+    final dynamic decoded = _tryDecodeJson(value);
     if (decoded is Map<String, dynamic>) {
       final dynamic tokenField = decoded['token'];
       if (tokenField is String && tokenField.isNotEmpty) {
         return _normalizeTokenCandidate(tokenField);
       }
     }
-
-    return _normalizeTokenCandidate(source);
+    return _normalizeTokenCandidate(value);
   }
 
 
@@ -95,8 +108,7 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
     if (match != null) {
       return match.group(1) ?? compact;
     }
-
-
+    return compact;
   }
 
   dynamic _tryDecodeJson(String value) {
@@ -112,13 +124,6 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
     if (parts.length != 3) {
       return null;
     }
-
-
-    return null;
-  }
-
-    return null;
-  }
 
     try {
       final String normalizedPayload = base64Url.normalize(parts[1]);
@@ -141,6 +146,84 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
     return null;
   }
 
+  String? _extractDisplayName(Map<String, dynamic>? claims) {
+    if (claims == null) return null;
+
+    final String? fromGivenAndFamily = _joinNameParts(claims);
+    if (fromGivenAndFamily != null) return fromGivenAndFamily;
+
+    const Set<String> candidateKeys = <String>{
+      'display_name',
+      'displayname',
+      'display-name',
+      'name',
+      'fullname',
+      'full_name',
+      'full-name',
+      'preferred_username',
+      'preferredusername',
+      'username',
+      'user_name',
+      'nom',
+      'prenom',
+      'agent_name',
+      'agentname',
+      'sub',
+    };
+
+    final String? recursiveMatch = _findDisplayNameRecursively(
+      claims,
+      candidateKeys: candidateKeys,
+    );
+    if (recursiveMatch != null) return recursiveMatch;
+
+    return null;
+  }
+
+  String? _joinNameParts(Map<String, dynamic> claims) {
+    const List<String> givenNameKeys = <String>['given_name', 'givenname', 'prenom'];
+    const List<String> familyNameKeys = <String>['family_name', 'familyname', 'nom'];
+
+    String? findFirst(List<String> keys) {
+      for (final String key in keys) {
+        final dynamic value = claims[key];
+        if (value is String && value.trim().isNotEmpty) {
+          return value.trim();
+        }
+      }
+      return null;
+    }
+
+    final String? givenName = findFirst(givenNameKeys);
+    final String? familyName = findFirst(familyNameKeys);
+    if (givenName != null && familyName != null) {
+      return '$givenName $familyName';
+    }
+    return givenName ?? familyName;
+  }
+
+  String? _findDisplayNameRecursively(
+    dynamic node, {
+    required Set<String> candidateKeys,
+  }) {
+    if (node is! Map) return null;
+    for (final MapEntry<dynamic, dynamic> entry in node.entries) {
+      final String normalizedKey = entry.key.toString().toLowerCase();
+      final dynamic value = entry.value;
+      if (candidateKeys.contains(normalizedKey) &&
+          value is String &&
+          value.trim().isNotEmpty) {
+        return value.trim();
+      }
+      final String? nested = _findDisplayNameRecursively(
+        value,
+        candidateKeys: candidateKeys,
+      );
+      if (nested != null) return nested;
+    }
+    return null;
+  }
+
   Future<void> _callProtectedApi(String token) async {
     final String endpoint = _endpointController.text.trim();
     if (endpoint.isEmpty) {
@@ -152,7 +235,7 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
     }
 
     final Uri? uri = Uri.tryParse(endpoint);
-
+    if (uri == null || !(uri.isScheme('http') || uri.isScheme('https'))) {
       setState(() {
         _isLoading = false;
         _error = 'URL invalide. Exemple: https://api.exemple.com/path';
@@ -305,6 +388,17 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
               ],
             ),
             const SizedBox(height: 12),
+            if (infoWidgets.isNotEmpty) ...<Widget>[
+              Expanded(
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: infoWidgets,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+            ],
 
             if (_serverResponse != null)
               Expanded(

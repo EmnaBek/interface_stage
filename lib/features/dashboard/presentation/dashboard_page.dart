@@ -2,9 +2,48 @@ import 'package:flutter/material.dart';
 import '../../../core/widgets/dashboard_tile.dart';
 import '../../../core/widgets/connection_banner.dart';
 import '../../../app/routes.dart';
+import '../../../core/session/user_session.dart';
 
-class DashboardPage extends StatelessWidget {
+class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
+
+  @override
+  State<DashboardPage> createState() => _DashboardPageState();
+}
+
+class _DashboardPageState extends State<DashboardPage> {
+  bool _hasAutoOpenedScanner = false;
+
+  Widget _buildCenterTitle() {
+    return ValueListenableBuilder<String?>(
+      valueListenable: UserSession.displayName,
+      builder: (BuildContext context, String? value, Widget? child) {
+        final String title =
+            (value == null || value.isEmpty) ? "CS Ahomey Lokpo" : value;
+        return Center(
+          child: Text(
+            title,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_hasAutoOpenedScanner) return;
+    _hasAutoOpenedScanner = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      Navigator.pushNamed(context, AppRoutes.qrTokenValidation);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -28,13 +67,7 @@ class DashboardPage extends StatelessWidget {
               const SizedBox(height: 16),
 
               /// CENTER TITLE
-              const Text(
-                "CS Ahomey Lokpo",
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
+              _buildCenterTitle(),
 
               const SizedBox(height: 16),
 
