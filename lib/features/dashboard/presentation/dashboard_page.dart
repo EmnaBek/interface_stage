@@ -60,7 +60,7 @@ class _DashboardPageState extends State<DashboardPage> {
                       fontWeight: FontWeight.bold,
                     ),
                   );
-                ),
+
               ),
 
               const SizedBox(height: 16),
