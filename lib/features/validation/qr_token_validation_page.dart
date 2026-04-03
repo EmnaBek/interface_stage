@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:mobile_scanner/mobile_scanner.dart';
-import '../../core/session/user_session.dart';
 
 import '../../core/session/user_session.dart';
 
@@ -59,7 +58,6 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
       _jwtDecodeNote = decodedClaims == null
           ? 'Token détecté, mais payload JWT illisible (ou token non-JWT).'
           : null;
-
       _error = null;
       _serverResponse = null;
     });
@@ -67,7 +65,10 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
     final String? displayName = _extractDisplayName(decodedClaims);
     if (displayName != null && displayName.isNotEmpty) {
       UserSession.displayName.value = displayName;
+    }
 
+    await _callProtectedApi(extractedToken);
+  }
 
   String _extractToken(String value) {
     final Uri? uri = Uri.tryParse(value);
@@ -88,8 +89,11 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
   }
 
   String _normalizeTokenCandidate(String value) {
-    final String compact =
-        value.trim().replaceAll('\n', '').replaceAll('\r', '').replaceAll(' ', '');
+    final String compact = value
+        .trim()
+        .replaceAll('\n', '')
+        .replaceAll('\r', '')
+        .replaceAll(' ', '');
 
     final RegExp jwtPattern =
         RegExp(r'([A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+)');
@@ -139,6 +143,36 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
   String? _extractDisplayName(Map<String, dynamic>? claims) {
     if (claims == null) return null;
 
+    const List<String> preferredKeys = <String>[
+      'displayName',
+      'display_name',
+      'name',
+      'fullName',
+      'full_name',
+      'username',
+      'preferred_username',
+      'given_name',
+    ];
+
+    final List<dynamic> stack = <dynamic>[claims];
+    while (stack.isNotEmpty) {
+      final dynamic node = stack.removeLast();
+
+      if (node is Map<String, dynamic>) {
+        for (final String key in preferredKeys) {
+          final dynamic candidate = node[key];
+          if (candidate is String && candidate.trim().isNotEmpty) {
+            return candidate.trim();
+          }
+        }
+        stack.addAll(node.values);
+        continue;
+      }
+
+      if (node is List<dynamic>) {
+        stack.addAll(node);
+      }
+    }
 
     return null;
   }
@@ -317,7 +351,6 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
               ),
               const SizedBox(height: 12),
             ],
-
             if (_serverResponse != null)
               Expanded(
                 child: SingleChildScrollView(
