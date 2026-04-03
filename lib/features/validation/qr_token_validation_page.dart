@@ -58,7 +58,6 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
       _jwtDecodeNote = decodedClaims == null
           ? 'Token détecté, mais payload JWT illisible (ou token non-JWT).'
           : null;
-
       _error = null;
       _serverResponse = null;
     });
@@ -90,8 +89,11 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
   }
 
   String _normalizeTokenCandidate(String value) {
-    final String compact =
-        value.trim().replaceAll('\n', '').replaceAll('\r', '').replaceAll(' ', '');
+    final String compact = value
+        .trim()
+        .replaceAll('\n', '')
+        .replaceAll('\r', '')
+        .replaceAll(' ', '');
 
     final RegExp jwtPattern =
         RegExp(r'([A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+)');
@@ -151,6 +153,7 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
       'preferred_username',
       'given_name',
     ];
+
 
 
 
@@ -346,7 +349,6 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
               ),
               const SizedBox(height: 12),
             ],
-
             if (_serverResponse != null)
               Expanded(
                 child: SingleChildScrollView(
