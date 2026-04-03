@@ -155,6 +155,7 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
 
 
 
+
         for (final dynamic child in node.values) {
           final String? nested = searchIn(child);
           if (nested != null) return nested;
