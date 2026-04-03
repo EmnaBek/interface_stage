@@ -152,26 +152,24 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
       'given_name',
     ];
 
-    final List<dynamic> stack = <dynamic>[claims];
-    while (stack.isNotEmpty) {
-      final dynamic node = stack.removeLast();
-      if (node is Map<String, dynamic>) {
-        for (final String key in preferredKeys) {
-          final dynamic value = node[key];
-          if (value is String && value.trim().isNotEmpty) {
-            return value.trim();
-          }
-        }
-        stack.addAll(node.values);
-        continue;
-      }
 
-      if (node is List<dynamic>) {
-        stack.addAll(node);
+
+
+
+        for (final dynamic child in node.values) {
+          final String? nested = searchIn(child);
+          if (nested != null) return nested;
+        }
+      } else if (node is List<dynamic>) {
+        for (final dynamic child in node) {
+          final String? nested = searchIn(child);
+          if (nested != null) return nested;
+        }
       }
+      return null;
     }
 
-    return null;
+    return searchIn(claims);
   }
 
   Future<void> _callProtectedApi(String token) async {
