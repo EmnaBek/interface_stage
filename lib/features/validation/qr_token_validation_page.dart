@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:mobile_scanner/mobile_scanner.dart';
-import '../../core/session/user_session.dart';
 
 import '../../core/session/user_session.dart';
 
@@ -67,7 +66,10 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
     final String? displayName = _extractDisplayName(decodedClaims);
     if (displayName != null && displayName.isNotEmpty) {
       UserSession.displayName.value = displayName;
+    }
 
+    await _callProtectedApi(extractedToken);
+  }
 
   String _extractToken(String value) {
     final Uri? uri = Uri.tryParse(value);
@@ -139,6 +141,41 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
   String? _extractDisplayName(Map<String, dynamic>? claims) {
     if (claims == null) return null;
 
+    const List<String> preferredKeys = <String>[
+      'displayName',
+      'display_name',
+      'name',
+      'fullName',
+      'full_name',
+      'username',
+      'preferred_username',
+      'given_name',
+    ];
+
+    return _searchDisplayNameInNode(claims, preferredKeys);
+  }
+
+  String? _searchDisplayNameInNode(dynamic node, List<String> preferredKeys) {
+    if (node is Map<String, dynamic>) {
+      for (final String key in preferredKeys) {
+        final dynamic value = node[key];
+        if (value is String && value.trim().isNotEmpty) {
+          return value.trim();
+        }
+      }
+
+      for (final dynamic child in node.values) {
+        final String? nested = _searchDisplayNameInNode(child, preferredKeys);
+        if (nested != null) return nested;
+      }
+    }
+
+    if (node is List<dynamic>) {
+      for (final dynamic child in node) {
+        final String? nested = _searchDisplayNameInNode(child, preferredKeys);
+        if (nested != null) return nested;
+      }
+    }
 
     return null;
   }
