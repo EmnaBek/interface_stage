@@ -152,14 +152,7 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
       'given_name',
     ];
 
-    String? searchIn(dynamic node) {
-      if (node is Map<String, dynamic>) {
-        for (final String key in preferredKeys) {
-          final dynamic value = node[key];
-          if (value is String && value.trim().isNotEmpty) {
-            return value.trim();
-          }
-        }
+
 
         for (final dynamic child in node.values) {
           final String? nested = searchIn(child);
