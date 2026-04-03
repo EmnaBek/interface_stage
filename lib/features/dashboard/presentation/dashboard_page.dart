@@ -48,6 +48,22 @@ class _DashboardPageState extends State<DashboardPage> {
               const SizedBox(height: 16),
 
               /// CENTER TITLE
+              ValueListenableBuilder<String?>(
+                valueListenable: UserSession.displayName,
+                builder: (BuildContext context, String? displayName, Widget? _) {
+                  final String title = (displayName != null && displayName.trim().isNotEmpty)
+                      ? displayName.trim()
+                      : 'CS Ahomey Lokpo';
+                  return Text(
+                    title,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  );
+                },
+              ),
 
 
               const SizedBox(height: 16),
