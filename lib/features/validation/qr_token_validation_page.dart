@@ -152,14 +152,22 @@ class _QrTokenValidationPageState extends State<QrTokenValidationPage> {
       'given_name',
     ];
 
-    for (final String key in preferredKeys) {
-      final dynamic value = claims[key];
-      if (value is String && value.trim().isNotEmpty) {
-        return value.trim();
+
+
+        for (final dynamic child in node.values) {
+          final String? nested = searchIn(child);
+          if (nested != null) return nested;
+        }
+      } else if (node is List<dynamic>) {
+        for (final dynamic child in node) {
+          final String? nested = searchIn(child);
+          if (nested != null) return nested;
+        }
       }
+      return null;
     }
 
-    return null;
+    return searchIn(claims);
   }
 
   Future<void> _callProtectedApi(String token) async {
