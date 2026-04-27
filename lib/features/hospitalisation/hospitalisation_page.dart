@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:io';
 import 'dart:convert';
 import '../../core/services/taka_usb_service.dart';
+import '../referentiel/referentiel_data.dart';
 
 // ─── Couleurs principales ────────────────────────────────────────────────────
 const kGreen = Color(0xFF4CAF8C);
@@ -1236,27 +1237,78 @@ class _HospitalisationPageState extends State<HospitalisationPage> {
     );
   }
 
-  // ── Ajout d'items (dialog simple) ─────────────────────────────────────────
+  List<String> _getReferentielOptions(String type) {
+    switch (type) {
+      case 'affection':
+        return ReferentielData.cim10;
+      case 'acte':
+        return ReferentielData.actesConsultation;
+      case 'medicament':
+        return ReferentielData.pharmacie;
+      case 'labo':
+        return ReferentielData.laboratoire;
+      case 'radio':
+        return ReferentielData.radiologie;
+      default:
+        return const [];
+    }
+  }
+
+  // ── Ajout d'items (liste déroulante depuis le référentiel) ───────────────
   void _addItem(String type) {
-    final ctrl = TextEditingController();
+    final options = _getReferentielOptions(type);
+    String? selectedValue;
+
+    if (options.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Aucune donnée de référentiel disponible.'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
     showDialog(
       context: context,
-      builder: (_) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: Text('Ajouter $type'),
-        content: TextField(
-          controller: ctrl,
-          autofocus: true,
-          decoration: const InputDecoration(hintText: 'Nom...'),
+        content: StatefulBuilder(
+          builder: (context, setDialogState) {
+            return DropdownButtonFormField<String>(
+              value: selectedValue,
+              isExpanded: true,
+              decoration: const InputDecoration(
+                labelText: 'Sélectionner une valeur',
+                border: OutlineInputBorder(),
+              ),
+              hint: const Text('Choisir dans le référentiel'),
+              items: options
+                  .map(
+                    (option) => DropdownMenuItem<String>(
+                      value: option,
+                      child: Text(
+                        option,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  )
+                  .toList(),
+              onChanged: (value) {
+                setDialogState(() => selectedValue = value);
+              },
+            );
+          },
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
             child: const Text('Annuler'),
           ),
           ElevatedButton(
             onPressed: () {
-              final v = ctrl.text.trim();
-              if (v.isNotEmpty) {
+              final v = selectedValue;
+              if (v != null && v.isNotEmpty) {
                 setState(() {
                   switch (type) {
                     case 'affection':
@@ -1276,8 +1328,15 @@ class _HospitalisationPageState extends State<HospitalisationPage> {
                       break;
                   }
                 });
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Veuillez sélectionner une valeur.'),
+                    backgroundColor: Colors.orange,
+                  ),
+                );
               }
-              Navigator.pop(context);
+              Navigator.pop(dialogContext);
             },
             style: ElevatedButton.styleFrom(backgroundColor: kGreen),
             child: const Text('Ajouter'),
